@@ -11,6 +11,12 @@
 
 <div class="col-md-6">
 
+    <label for="sortOrder">Sort by: </label>
+    <select id="sortOrder">
+        <option value="importance">Importance</option>
+        <option value="rank">Rank</option>
+    </select>
+
     <ul class="list-group">
 
         <li class="list-group-item">
@@ -36,11 +42,11 @@
                     break;
             }
 
-            <li class="list-group-item @contextualClass" data-visible="@(!item.IsDone)">
+            <li class="item list-group-item @contextualClass" data-visible="@(!item.IsDone)" data-id="@item.TodoItemId" data-importance="@item.Importance" data-rank="@item.Rank">
 
                 <div class="row">
 
-                    <div class="col-md-8">
+                    <div class="col-md-6">
                         <a asp-action="Edit" asp-controller="TodoItem" asp-route-todoItemId="@item.TodoItemId">
 
                             @if (item.IsDone)
@@ -52,6 +58,10 @@
                                 <text>@item.Title</text>
                             }
                         </a>
+                    </div>
+
+                    <div class="col-md-2">
+                        <text>@item.Rank</text>
                     </div>
 
                     <div class="col-md-4 text-right">
@@ -85,6 +95,31 @@
                 } else {
                     $('.list-group-item[data-visible="False"]').show();
                 }
+            });
+        });
+
+        $(document).ready(function () {
+            $('#sortOrder').change(function () {
+                var sortBy = $(this).val();
+                var items = $('.list-group .item');
+
+                items.sort(function (a, b) {
+                    if (sortBy === 'importance') {
+                        var importanceDiff = $(a).data('importance') - $(b).data('importance');
+                        if (importanceDiff === 0) {
+                            return $(a).data('rank') - $(b).data('rank');
+                        }
+                        return importanceDiff;
+                    } else if (sortBy === 'rank') {
+                        var rankDiff = $(a).data('rank') - $(b).data('rank');
+                        if (rankDiff === 0) {
+                            return $(a).data('importance') - $(b).data('importance');
+                        }
+                        return rankDiff;
+                    }
+                });
+
+                $('.list-group').empty().append(items);
             });
         });
     </script>
