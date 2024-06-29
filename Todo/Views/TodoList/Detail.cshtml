@@ -19,7 +19,8 @@
             </a>
         </li>
 
-        @foreach (var item in Model.Items)
+        <!-- client side sorting -->
+        @foreach (var item in Model.Items.OrderBy(x => x.Importance))
         {
             string contextualClass;
             switch (item.Importance)
