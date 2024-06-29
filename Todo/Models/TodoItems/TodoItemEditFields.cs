@@ -10,7 +10,7 @@ namespace Todo.Models.TodoItems
         public string TodoListTitle { get; set; }
         public int TodoItemId { get; set; }
         public bool IsDone { get; set; }
-        [DisplayName("Responsible User")]
+        [DisplayName("Responsible Party")]
         public string ResponsiblePartyId { get; set; }
         public Importance Importance { get; set; }
 
