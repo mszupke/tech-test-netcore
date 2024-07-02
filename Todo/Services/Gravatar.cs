@@ -1,9 +1,16 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Todo.Services
 {
-    public static class Gravatar
+    public class Gravatar
     {
         public static string GetHash(string emailAddress)
         {
@@ -19,6 +26,36 @@ namespace Todo.Services
                 }
                 return builder.ToString().ToLowerInvariant();
             }
+        }
+
+        public async Task<UserWithGravatar> GetGravatarProfile(string emailAddress)
+        {
+            var user = new UserWithGravatar { Email = emailAddress };
+            var hash = GetHash(emailAddress);
+
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://gravatar.com/");
+                var response = await client.GetAsync($"{hash}.json");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    dynamic gravatarData = JsonConvert.DeserializeObject(json);
+
+                    if (gravatarData != null && gravatarData.entry != null)
+                    {
+                        user.Name = gravatarData.entry[0].displayName;
+                        user.AvatarUrl = gravatarData.entry[0].thumbnailUrl;
+                    }
+                }
+                else
+                {
+                    throw new ApplicationException("The Gravity API is temporarily unavailable");
+                }
+            }
+
+            return user;
         }
     }
 }

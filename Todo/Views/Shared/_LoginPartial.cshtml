@@ -1,8 +1,13 @@
 @using Microsoft.AspNetCore.Identity
+@using Polly
+@using Polly.Registry
+@using System.Threading
 @using Todo.Services
 
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
+@inject Gravatar GravatarService
+@inject ResiliencePipelineProvider<string> PipelineProvider
 
 @if (SignInManager.IsSignedIn(User))
 {
@@ -15,11 +20,22 @@
 
                         var iu = await UserManager.GetUserAsync(User);
                         var emailAddress = await UserManager.GetEmailAsync(iu);
-                        var gravatarhash = Gravatar.GetHash(emailAddress);
+
+                        var pipeline = PipelineProvider.GetPipeline<UserWithGravatar>("gravatar-profiles-fallback");
+
+                        var gravatarUser = await pipeline.ExecuteAsync(async token => 
+                            await GravatarService.GetGravatarProfile(emailAddress), CancellationToken.None);
                     }
 
-                    <img src="https://www.gravatar.com/avatar/@gravatarhash?s=30" />
-                    @UserManager.GetUserName(User)
+                    @if (gravatarUser.IsAuthenticated) 
+                    {
+                        <img src="@gravatarUser.AvatarUrl" width="30" height="30" />
+                        @($"{gravatarUser.Name} ({gravatarUser.Email})")
+                    }
+                    else 
+                    {
+                        @UserManager.GetUserName(User)
+                    }
                 </a>
             </li>
             <li>

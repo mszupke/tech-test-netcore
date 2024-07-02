@@ -8,6 +8,9 @@ using Todo.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Todo.Services;
+using Polly;
+using Polly.Fallback;
 
 namespace Todo
 {
@@ -36,6 +39,16 @@ namespace Todo
 
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+            services.AddTransient<Gravatar>();
+            services.AddResiliencePipeline<string, UserWithGravatar>("gravatar-profiles-fallback",
+                pipelineBuilder => 
+                {
+                    pipelineBuilder.AddFallback(new FallbackStrategyOptions<UserWithGravatar>
+                    {
+                        FallbackAction = _ => Outcome.FromResultAsValueTask(UserWithGravatar.Empty)
+                    });
+                });
 
             services.AddControllers();
 
