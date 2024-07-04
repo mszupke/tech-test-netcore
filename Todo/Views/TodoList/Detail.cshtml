@@ -44,7 +44,7 @@
         </li>
 
         <!-- client side sorting -->
-        @foreach (var item in Model.Items.OrderBy(x => x.Importance))
+        @foreach (var item in Model.Items.OrderBy(x => x.Rank))
         {
             string contextualClass;
             switch (item.Importance)
@@ -92,6 +92,8 @@
 
                         </small>
                     </div>
+                    <button class="move-up" data-id="@item.TodoItemId">Up</button>
+                    <button class="move-down" data-id="@item.TodoItemId">Down</button>
                 </div>
 
             </li>
@@ -151,6 +153,61 @@
                 posting.done(function (data) {
                     location.reload();
                 });
+            });
+        });
+
+        $(document).ready(function () {
+            function updateRank(itemId, newRank) {
+                $.ajax({
+                    type: 'PATCH',
+                    url: '/api/todo-items/update-rank',
+                    data: JSON.stringify({ id: itemId, rank: newRank }),
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json'
+                });
+            }
+
+            function refreshList() {
+                var items = $('.list-group .item');
+                items.sort(function (a, b) {
+                    var rankDiff = $(a).data('rank') - $(b).data('rank');
+                        if (rankDiff === 0) {
+                            return $(a).data('importance') - $(b).data('importance');
+                        }
+                        return rankDiff;
+                });
+
+                $('.list-group').empty().append(items);
+            }
+
+            $('.list-group').on('click', '.move-up', function () {
+                var item = $(this).closest('.item');
+                var currentRank = item.data('rank');
+                var previousItem = item.prev('.item');
+
+                if (previousItem.length) {
+                    var previousRank = previousItem.data('rank');
+                    updateRank(item.data('id'), previousRank);
+                    updateRank(previousItem.data('id'), currentRank);
+                    item.data('rank', previousRank);
+                    previousItem.data('rank', currentRank);
+                    refreshList();
+                }
+            });
+
+            $('.list-group').on('click', '.move-down', function () {
+                var item = $(this).closest('.item');
+                var currentRank = item.data('rank');
+                var nextItem = item.next('.item');
+
+                if (nextItem.length) {
+                    var nextRank = nextItem.data('rank');
+                    updateRank(item.data('id'), nextRank);
+                    updateRank(nextItem.data('id'), currentRank);
+                    item.data('rank', nextRank);
+                    nextItem.data('rank', currentRank);
+                    refreshList();
+                }
             });
         });
 
